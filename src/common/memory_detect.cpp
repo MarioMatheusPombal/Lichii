@@ -12,10 +12,13 @@
 #include <sys/sysctl.h>
 #elif defined(__linux__)
 #include <sys/sysinfo.h>
+#include <unistd.h>
 #else
 #include <unistd.h>
 #endif
 #endif
+
+#include <cstdio>
 
 #include "common/memory_detect.h"
 
@@ -67,6 +70,33 @@ static MemoryInfo Detect() {
 const MemoryInfo& GetMemInfo() {
     static MemoryInfo mem_info = Detect();
     return mem_info;
+}
+
+u64 GetAvailablePhysicalMemory() {
+#ifdef _WIN32
+    MEMORYSTATUSEX memorystatus;
+    memorystatus.dwLength = sizeof(memorystatus);
+    return GlobalMemoryStatusEx(&memorystatus) ? memorystatus.ullAvailPhys : 0;
+#elif defined(__linux__) && !defined(__ANDROID__)
+    // MemAvailable counts reclaimable page cache; sysconf(_SC_AVPHYS_PAGES) is MemFree and
+    // reads far too low on a machine that has been up for a while.
+    if (std::FILE* file = std::fopen("/proc/meminfo", "r")) {
+        char line[128];
+        while (std::fgets(line, sizeof(line), file) != nullptr) {
+            unsigned long long kib{};
+            if (std::sscanf(line, "MemAvailable: %llu kB", &kib) == 1) {
+                std::fclose(file);
+                return static_cast<u64>(kib) * 1024;
+            }
+        }
+        std::fclose(file);
+    }
+    const long pages = sysconf(_SC_AVPHYS_PAGES);
+    const long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages > 0 && page_size > 0 ? static_cast<u64>(pages) * static_cast<u64>(page_size) : 0;
+#else
+    return 0;
+#endif
 }
 
 } // namespace Common

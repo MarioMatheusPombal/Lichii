@@ -24,6 +24,7 @@
 #include "common/fs/fs.h"
 #include "common/fs/path_util.h"
 #include "common/literals.h"
+#include "common/memory_detect.h"
 #include <ranges>
 #include "common/settings.h"
 #include "common/settings_enums.h"
@@ -1838,6 +1839,13 @@ void Device::CollectPhysicalMemoryInfo() {
         const s64 available_memory = static_cast<s64>(device_access_memory - device_initial_usage);
         const u64 memory_size = Settings::values.vram_usage_mode.GetValue() == Settings::VramUsageMode::Aggressive ? 6_GiB : 4_GiB;
         device_access_memory = static_cast<u64>(std::max<s64>(std::min<s64>(available_memory - 8_GiB, memory_size), std::min<s64>(local_memory, memory_size)));
+        // An iGPU shares system RAM: the heap sizes above are a fraction of it that is not
+        // checked against what is free. Keep half of the RAM free now for the game and the OS,
+        // but never go below 1 GiB and never raise the budget.
+        if (const u64 free_ram = Common::GetAvailablePhysicalMemory(); free_ram != 0) {
+            device_access_memory =
+                std::min<u64>(device_access_memory, std::max<u64>(free_ram / 2, 1_GiB));
+        }
     } else {
         const u64 reserve_memory = std::min<u64>(device_access_memory / 8, 1_GiB);
         device_access_memory -= reserve_memory;

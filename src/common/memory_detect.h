@@ -18,4 +18,10 @@ struct MemoryInfo {
  */
 [[nodiscard]] const MemoryInfo& GetMemInfo();
 
+/**
+ * Gets the physical memory that is free right now (not cached at startup, it changes)
+ * @return Bytes, or 0 when the platform cannot tell (Android and other platforms included)
+ */
+[[nodiscard]] u64 GetAvailablePhysicalMemory();
+
 } // namespace Common
