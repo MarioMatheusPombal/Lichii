@@ -316,8 +316,7 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
     INSERT(Settings, native_preflush, tr("Preflush GPU-written memory (Switch 2)"),
            tr("Switch 2 games read memory the GPU wrote by trapping the read and waiting for the "
               "GPU each time. With this on, a page the game read once is downloaded at every "
-              "fence instead, so later reads don't stall the emulator.
-"
+              "fence instead, so later reads don't stall the emulator.\n"
               "Much faster in Ocarina of Time (Kokiri Forest about 26 to 40 FPS in testing), "
               "but can cause some flicker. The EDEN_NX2_PREFLUSH=1 environment variable also "
               "turns it on."));
