@@ -119,6 +119,19 @@ bool Puller::CanResumeAcquire(DmaPusher& dma_pusher) {
                     dma_pusher.memory_manager.Read<u32>((pending_acquire->address & ~GPUVAddr{0xf}) + 8),
                     dma_pusher.memory_manager.Read<u32>((pending_acquire->address & ~GPUVAddr{0xf}) + 12));
     }
+    // native_acquire_timeout_s: resume a wait that looks stuck instead of hanging the game.
+    if (const u32 timeout = Settings::values.native_acquire_timeout_s.GetValue();
+        timeout != 0 &&
+        std::chrono::steady_clock::now() - pending_acquire->since > std::chrono::seconds{timeout}) {
+        static std::atomic<u32> unstuck{};
+        if (unstuck.fetch_add(1) < 32) {
+            LOG_WARNING(HW_GPU, "Channel {} resumes semaphore {:#x} wait ({:#x}, now {:#x}) after "
+                        "{} s without it being met (native_acquire_timeout_s)",
+                        dma_pusher.channel_state.bind_id, pending_acquire->address,
+                        pending_acquire->value, current, timeout);
+        }
+        return true;
+    }
     return false;
 }
 

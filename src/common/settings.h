@@ -649,6 +649,20 @@ struct Values {
                                                          true,
                                                          true};
 
+    SwitchableSetting<bool> native_preflush{linkage, false, "native_preflush",
+                                            Category::RendererAdvanced, Specialization::Default,
+                                            true, true};
+
+    SwitchableSetting<u32, true> native_acquire_timeout_s{linkage,
+                                                          0,
+                                                          0,
+                                                          30,
+                                                          "native_acquire_timeout_s",
+                                                          Category::RendererAdvanced,
+                                                          Specialization::Countable,
+                                                          true,
+                                                          true};
+
     SwitchableSetting<bool> amd_allow_fp16{linkage, false, "amd_allow_fp16",
                                            Category::RendererAdvanced, Specialization::Default};
 

@@ -313,6 +313,18 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Used by the Bounded mode: the most time per frame that Switch 2 draws may wait in "
               "total for pipelines that are still building. Once spent, the remaining unbuilt "
               "draws of that frame are skipped."));
+    INSERT(Settings, native_preflush, tr("Preflush GPU-written memory (Switch 2)"),
+           tr("Switch 2 games read memory the GPU wrote by trapping the read and waiting for the "
+              "GPU each time. With this on, a page the game read once is downloaded at every "
+              "fence instead, so later reads don't stall the emulator.
+"
+              "Much faster in Ocarina of Time (Kokiri Forest about 26 to 40 FPS in testing), "
+              "but can cause some flicker. The EDEN_NX2_PREFLUSH=1 environment variable also "
+              "turns it on."));
+    INSERT(Settings, native_acquire_timeout_s, tr("Unstick waiting GPU channels after (s):"),
+           tr("Safety valve for GPU hangs. A Switch 2 GPU channel waiting on a semaphore longer "
+              "than this resumes anyway and logs a warning, so the game may show a glitch "
+              "instead of freezing. 0 turns it off (the default): the channel waits forever."));
     INSERT(Settings, amd_allow_fp16, tr("Allow float16 shader math on AMD (experimental)"),
            tr("The emulator turns off 16-bit float shader math on AMD GPUs because it was broken "
               "on some drivers and games (Donkey Kong Country Returns). Enabling this can improve "

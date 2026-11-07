@@ -288,7 +288,8 @@ std::optional<VideoCore::RasterizerDownloadArea> BufferCache<P>::GetFlushArea(DA
         const char* value = std::getenv("EDEN_NX2_PREFLUSH");
         return value != nullptr && value[0] == '1';
     }();
-    const bool preflush = nx2_preflush || !Tegra::g_nx2_ampere.load(std::memory_order_relaxed);
+    const bool preflush = nx2_preflush || Settings::values.native_preflush.GetValue() ||
+                          !Tegra::g_nx2_ampere.load(std::memory_order_relaxed);
     if (!area->preemtive) {
         if (Nx2DownloadTrace::g_enabled) [[unlikely]] {
             Nx2DownloadTrace::Marked(device_addr_start_aligned,
