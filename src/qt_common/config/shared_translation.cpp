@@ -290,6 +290,12 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Enables GPU vendor-specific pipeline cache.\nThis option can improve shader loading "
               "time significantly in cases where the Vulkan driver does not store pipeline cache "
               "files internally."));
+    INSERT(Settings, shader_compile_threads, tr("Shader compile threads"),
+           tr("Number of threads that build shader pipelines in the background (Vulkan, not "
+              "Android). 0 is Auto: all but one thread on CPUs with 12 or more threads, half of "
+              "them on smaller CPUs.\n"
+              "Fewer threads leave more CPU for emulation while shaders build; more threads "
+              "shorten stutter-free loading on strong CPUs. Takes effect on the next game start."));
     INSERT(Settings, enable_compute_pipelines, tr("Enable Compute Pipelines (Intel Vulkan Only)"),
            tr("Required by some games.\nThis setting only exists for Intel "
               "proprietary drivers and may crash if enabled.\nCompute pipelines are always enabled "

@@ -621,6 +621,16 @@ struct Values {
         linkage, true, "use_vulkan_driver_pipeline_cache", Category::RendererAdvanced,
         Specialization::Default};
 
+    SwitchableSetting<u32, true> shader_compile_threads{linkage,
+                                                        0,
+                                                        0,
+                                                        16,
+                                                        "shader_compile_threads",
+                                                        Category::RendererAdvanced,
+                                                        Specialization::Countable,
+                                                        true,
+                                                        true};
+
     SwitchableSetting<bool> enable_compute_pipelines{linkage, false, "enable_compute_pipelines",
                                                      Category::RendererAdvanced};
 
