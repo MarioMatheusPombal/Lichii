@@ -77,7 +77,13 @@ inline constexpr std::array<const char*, static_cast<size_t>(Zone::Count)> zone_
 };
 
 // Read once at startup: Enabled() runs several times per method write (no guard to check).
-inline const bool g_enabled = std::getenv("EDEN_NX2_GPU_PROFILE") != nullptr;
+// Static initialisation runs before main() applies nx2_switches.txt, so the frontends call
+// RereadEnvironment() right after loading the file; nothing reads the flag before that.
+inline bool g_enabled = std::getenv("EDEN_NX2_GPU_PROFILE") != nullptr;
+
+inline void RereadEnvironment() {
+    g_enabled = std::getenv("EDEN_NX2_GPU_PROFILE") != nullptr;
+}
 
 inline bool Enabled() {
     return g_enabled;

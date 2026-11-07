@@ -27,6 +27,7 @@
 #endif
 
 #include "main_window.h"
+#include "video_core/nx2_profile.h"
 
 #ifdef _WIN32
 #include <QScreen>
@@ -83,6 +84,7 @@ static Qt::HighDpiScaleFactorRoundingPolicy GetHighDpiRoundingPolicy() {
 
 int main(int argc, char* argv[]) {
     LoadNx2Switches(argv[0]);
+    VideoCommon::Nx2Profile::RereadEnvironment();
 #if YUZU_ROOM
     bool launch_room = false;
     for (int i = 1; i < argc; i++) {

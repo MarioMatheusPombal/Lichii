@@ -5,6 +5,11 @@
 // Other platforms do, and thus have conflicting VulkanMemoryAllocator symbols
 #include <algorithm>
 #include <array>
+#include <cstdlib>
+#include <string_view>
+#ifndef _WIN32
+extern char** environ;
+#endif
 #include <atomic>
 #include <memory>
 #include <span>
@@ -2237,6 +2242,23 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
                      .arg(QString::fromStdString(title_name), instruction_set_suffix)
                      .toStdString();
     LOG_INFO(Frontend, "Booting game: {:016X} | {} | {}", title_id, title_name, title_version);
+    {
+        // The EDEN_NX2_* switches this run sees: nx2_switches.txt (next to the executable and in
+        // the config folder) plus the real environment, which wins.
+        std::string switches;
+#ifdef _WIN32
+        char** env = _environ;
+#else
+        char** env = environ;
+#endif
+        for (; env != nullptr && *env != nullptr; ++env) {
+            const std::string_view entry{*env};
+            if (entry.starts_with("EDEN_NX2_")) {
+                switches.append(" ").append(entry);
+            }
+        }
+        LOG_INFO(Frontend, "NX2 switches:{}", switches.empty() ? std::string{" none"} : switches);
+    }
     const auto gpu_vendor = QtCommon::system->GPU().Renderer().GetDeviceVendor();
     UpdateWindowTitle(title_name, title_version, gpu_vendor);
 
