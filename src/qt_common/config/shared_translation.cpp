@@ -296,6 +296,11 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "them on smaller CPUs.\n"
               "Fewer threads leave more CPU for emulation while shaders build; more threads "
               "shorten stutter-free loading on strong CPUs. Takes effect on the next game start."));
+    INSERT(Settings, amd_allow_fp16, tr("Allow float16 shader math on AMD (experimental)"),
+           tr("The emulator turns off 16-bit float shader math on AMD GPUs because it was broken "
+              "on some drivers and games (Donkey Kong Country Returns). Enabling this can improve "
+              "performance on GPUs with fast half-precision math, but may corrupt graphics in some "
+              "titles. Takes effect on the next game start."));
     INSERT(Settings, enable_compute_pipelines, tr("Enable Compute Pipelines (Intel Vulkan Only)"),
            tr("Required by some games.\nThis setting only exists for Intel "
               "proprietary drivers and may crash if enabled.\nCompute pipelines are always enabled "

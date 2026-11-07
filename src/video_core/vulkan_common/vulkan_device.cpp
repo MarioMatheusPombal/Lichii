@@ -642,11 +642,17 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             has_broken_cube_compatibility = true;
         }
 
-        // AMD drivers (2026+) have broken float16 math on DKCR
+        // AMD drivers (2026+) have broken float16 math on DKCR. amd_allow_fp16 keeps it on for
+        // people who accept the risk.
         if (features.shader_float16_int8.shaderFloat16) {
-            LOG_WARNING(Render_Vulkan,
-                        "AMD drivers (2026+) have broken float16 math");
-            features.shader_float16_int8.shaderFloat16 = false;
+            if (Settings::values.amd_allow_fp16.GetValue()) {
+                LOG_WARNING(Render_Vulkan,
+                            "AMD float16 math kept on (amd_allow_fp16); it may corrupt graphics "
+                            "in some titles");
+            } else {
+                LOG_WARNING(Render_Vulkan, "AMD drivers (2026+) have broken float16 math");
+                features.shader_float16_int8.shaderFloat16 = false;
+            }
         }
     }
 
