@@ -301,6 +301,12 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "on some drivers and games (Donkey Kong Country Returns). Enabling this can improve "
               "performance on GPUs with fast half-precision math, but may corrupt graphics in some "
               "titles. Takes effect on the next game start."));
+    INSERT(Settings, amd_vulkan_pipeline_cache, tr("Use Vulkan pipeline cache on AMD drivers"),
+           tr("The AMD proprietary driver keeps its own pipeline disk cache, so the emulator does "
+              "not use its own Vulkan pipeline cache there.\n"
+              "Enable this to use it anyway, for example when the driver cache is cleared often or "
+              "disabled. It costs some memory and may cause short stalls when the cache is saved. "
+              "Only has an effect when \"Use Vulkan pipeline cache\" is on."));
     INSERT(Settings, enable_compute_pipelines, tr("Enable Compute Pipelines (Intel Vulkan Only)"),
            tr("Required by some games.\nThis setting only exists for Intel "
               "proprietary drivers and may crash if enabled.\nCompute pipelines are always enabled "

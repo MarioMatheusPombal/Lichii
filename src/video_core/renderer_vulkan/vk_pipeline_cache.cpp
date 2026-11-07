@@ -434,8 +434,10 @@ namespace {
 bool DriverCachesPipelines(const Device& device) {
     switch (device.GetDriverID()) {
     case VK_DRIVER_ID_NVIDIA_PROPRIETARY:
-    case VK_DRIVER_ID_AMD_PROPRIETARY:
         return true;
+    case VK_DRIVER_ID_AMD_PROPRIETARY:
+        // amd_vulkan_pipeline_cache: use Eden's cache on top of the driver's anyway.
+        return !Settings::values.amd_vulkan_pipeline_cache.GetValue();
     default:
         return false;
     }

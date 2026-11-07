@@ -634,6 +634,10 @@ struct Values {
     SwitchableSetting<bool> amd_allow_fp16{linkage, false, "amd_allow_fp16",
                                            Category::RendererAdvanced, Specialization::Default};
 
+    SwitchableSetting<bool> amd_vulkan_pipeline_cache{linkage, false, "amd_vulkan_pipeline_cache",
+                                                      Category::RendererAdvanced,
+                                                      Specialization::Default};
+
     SwitchableSetting<bool> enable_compute_pipelines{linkage, false, "enable_compute_pipelines",
                                                      Category::RendererAdvanced};
 
