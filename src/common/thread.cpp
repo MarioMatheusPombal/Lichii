@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "common/adpf.h"
+#include "common/core_pinning.h"
 #include "common/error.h"
 #include "common/event_wait.h"
 #include "common/hybrid_core_placement.h"
@@ -461,6 +462,7 @@ namespace {
 // EDEN_HYBRID_CORES=0 turns this off; the hybrid_core_placement setting (Auto/Off/On) decides per
 // call whether a CPU is big enough to benefit.
 struct WindowsCpuSets {
+    std::vector<Common::LogicalProcessor> processors;
     std::vector<ULONG> performance;
     std::vector<ULONG> efficiency;
     bool hybrid = false;
@@ -492,11 +494,6 @@ const WindowsCpuSets& CpuSets() {
                  GetCurrentProcess(), 0)) {
             return result;
         }
-        struct Entry {
-            ULONG id;
-            u8 efficiency_class;
-        };
-        std::vector<Entry> entries;
         u8 best = 0;
         for (ULONG offset = 0; offset + sizeof(SYSTEM_CPU_SET_INFORMATION) <= length;) {
             const auto* info =
@@ -505,14 +502,17 @@ const WindowsCpuSets& CpuSets() {
                 break;
             }
             if (info->Type == CpuSetInformation) {
-                entries.push_back({info->CpuSet.Id, info->CpuSet.EfficiencyClass});
+                const u32 core =
+                    (static_cast<u32>(info->CpuSet.Group) << 8) | info->CpuSet.CoreIndex;
+                result.processors.push_back({static_cast<u32>(info->CpuSet.Id), core,
+                                             static_cast<u8>(info->CpuSet.EfficiencyClass)});
                 best = (std::max)(best, static_cast<u8>(info->CpuSet.EfficiencyClass));
             }
             offset += info->Size;
         }
-        for (const Entry& entry : entries) {
-            (entry.efficiency_class == best ? result.performance : result.efficiency)
-                .push_back(entry.id);
+        for (const Common::LogicalProcessor& processor : result.processors) {
+            (processor.efficiency_class == best ? result.performance : result.efficiency)
+                .push_back(processor.id);
         }
         result.hybrid = !result.efficiency.empty() && result.performance.size() >= 2;
         if (result.hybrid) {
@@ -649,6 +649,44 @@ void SetCurrentThreadToPerformanceCores() {
                                     sets.performance.size())) {
         SelectCurrentThreadCpuSets(sets.performance);
     }
+#endif
+}
+
+void PinCurrentThread(PinnedRole role) {
+#ifdef _WIN32
+    struct PinnedCpuSets {
+        std::vector<ULONG> front;
+        std::vector<ULONG> back;
+        std::vector<ULONG> guest;
+    };
+    static const PinnedCpuSets pinned = [] {
+        const GpuThreadPinning plan = PlanGpuThreadPinning(CpuSets().processors);
+        if (plan.front.empty()) {
+            LOG_WARNING(Common,
+                        "GPU thread pinning skipped: {} physical performance cores, needs {}",
+                        plan.performance_cores, MinCoresForGpuThreadPinning);
+            return PinnedCpuSets{};
+        }
+        LOG_INFO(Common,
+                 "GPU thread pinning: front and back on a physical core each, guest cores on the "
+                 "other {} performance cores ({} logical processors)",
+                 plan.performance_cores - 2, plan.guest.size());
+        return PinnedCpuSets{{plan.front.begin(), plan.front.end()},
+                             {plan.back.begin(), plan.back.end()},
+                             {plan.guest.begin(), plan.guest.end()}};
+    }();
+    const std::vector<ULONG>& ids = role == PinnedRole::GpuFront  ? pinned.front
+                                    : role == PinnedRole::GpuBack ? pinned.back
+                                                                  : pinned.guest;
+    if (!ids.empty()) {
+        SelectCurrentThreadCpuSets(ids);
+    }
+#else
+    (void)role;
+    [[maybe_unused]] static const bool logged = [] {
+        LOG_INFO(Common, "GPU thread pinning is only supported on Windows");
+        return true;
+    }();
 #endif
 }
 
