@@ -173,16 +173,18 @@ void GpuSplit::WaitForSpace(size_t words) {
     }
     Publish();
     Nx2Profile::Scope scope{Nx2Profile::Zone::SplitDrain};
+    // The back must consume up to here to leave `words` free. After the spin, Backoff sleeps until
+    // the back stores a new position: it stores `consumed` (seq_cst) and then NotifyFront() reads
+    // front_waiting; Backoff stores front_waiting (seq_cst), reads front_wake and re-reads
+    // `consumed` (seq_cst). Either the back sees the flag and bumps front_wake, or the front sees
+    // the new position and does not sleep, so no wake-up is lost.
+    const u64 target = write_position + words - RingWords;
     for (u32 spins = 0;; ++spins) {
         consumed_cache = consumed.load(std::memory_order_acquire);
-        if (write_position + words - consumed_cache <= RingWords) {
+        if (consumed_cache >= target) {
             return;
         }
-        if (spins < 4096) {
-            Pause();
-        } else {
-            std::this_thread::yield();
-        }
+        Backoff(spins, target, 4096);
     }
 }
 
@@ -246,8 +248,8 @@ bool GpuSplit::WaitFor(u64 target, DrainSite site) {
     }
 }
 
-void GpuSplit::Backoff(u32 spins, u64 target) {
-    if (spins < 16384) {
+void GpuSplit::Backoff(u32 spins, u64 target, u32 spin_limit) {
+    if (spins < spin_limit) {
         Pause();
         return;
     }
@@ -259,7 +261,10 @@ void GpuSplit::Backoff(u32 spins, u64 target) {
     // back checks front_waiting after each store, the front checks the position after setting it.
     front_waiting.store(true, std::memory_order_seq_cst);
     const u32 seen = front_wake.load(std::memory_order_seq_cst);
-    if (consumed.load(std::memory_order_seq_cst) < target) {
+    // back_running is re-read after the flag: the back clears it before its final front_wake bump,
+    // so a shutdown between the check above and the wait cannot leave the front asleep.
+    if (consumed.load(std::memory_order_seq_cst) < target &&
+        back_running.load(std::memory_order_seq_cst)) {
         front_wake.wait(seen, std::memory_order_seq_cst);
     }
     front_waiting.store(false, std::memory_order_relaxed);
