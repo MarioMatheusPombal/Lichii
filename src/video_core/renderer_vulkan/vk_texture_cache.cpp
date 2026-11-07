@@ -13,6 +13,7 @@
 #include <span>
 #include <tuple>
 #include <memory>
+#include <mutex>
 #include <utility>
 #include <vector>
 #include <boost/container/small_vector.hpp>
@@ -1199,7 +1200,19 @@ void UseBc3ForSwitch2OnSmallCards(const Device& device) {
     const u64 budget = device.GetDeviceMemoryBudget();
     const u64 memory = budget != 0 ? budget : device.GetDeviceLocalMemory();
     const char* keep = std::getenv("EDEN_NX2_KEEP_ASTC");
-    if (memory >= 20_GiB || (keep != nullptr && keep[0] == '1')) {
+    bool keep_astc = keep != nullptr && keep[0] == '1';
+    if (keep_astc && memory < 8_GiB) {
+        // Uncompressed ASTC cannot fit: the textures would go unbacked and the game crash.
+        static std::once_flag warned;
+        std::call_once(warned, [memory] {
+            LOG_WARNING(Render_Vulkan,
+                        "Ignoring EDEN_NX2_KEEP_ASTC=1: only {} MiB of video memory, uncompressed "
+                        "ASTC needs at least 8 GiB",
+                        memory >> 20);
+        });
+        keep_astc = false;
+    }
+    if (memory >= 20_GiB || keep_astc) {
         return;
     }
     LOG_WARNING(Render_Vulkan,
