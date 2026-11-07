@@ -301,6 +301,14 @@ struct Values {
                                                                  true,
                                                                  true};
 
+    SwitchableSetting<CoreIdleSpin> core_idle_spin{linkage,
+                                                   CoreIdleSpin::Auto,
+                                                   "core_idle_spin",
+                                                   Category::Cpu,
+                                                   Specialization::Default,
+                                                   true,
+                                                   true};
+
     Setting<bool> cpuopt_page_tables{linkage, true, "cpuopt_page_tables", Category::CpuDebug};
     Setting<bool> cpuopt_block_linking{linkage, true, "cpuopt_block_linking", Category::CpuDebug};
     Setting<bool> cpuopt_return_stack_buffer{linkage, true, "cpuopt_return_stack_buffer",

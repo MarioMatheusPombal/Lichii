@@ -11,6 +11,7 @@
 #include "common/settings.h"
 #include "core/core.h"
 #include "core/debugger/debugger.h"
+#include "core/hle/kernel/idle_spin_policy.h"
 #include "core/hle/kernel/k_process.h"
 #include "core/hle/kernel/k_thread.h"
 #include "core/hle/kernel/kernel.h"
@@ -229,6 +230,7 @@ void PhysicalCore::Idle(KernelCore& kernel) {
     // host's thread wake-up latency to every handoff. EDEN_NX2_IDLE_SPIN_US=<n>: poll for that
     // many microseconds before blocking. Switch 2 titles poll 100 us by default outside Android
     // (title 1's frames: 42 ms without, 35 ms with 50 us, 34 ms with 100 us, 36 ms with 300 us).
+    // The core_idle_spin setting (Auto/Off/On) gates that default; Auto needs 8 hardware threads.
     static const long long spin_setting = [] {
         const char* text = std::getenv("EDEN_NX2_IDLE_SPIN_US");
         return text ? std::strtoll(text, nullptr, 10) : -1LL;
@@ -239,7 +241,14 @@ void PhysicalCore::Idle(KernelCore& kernel) {
         spin_us = 0;
 #else
         const KProcess* process = kernel.ApplicationProcess();
-        spin_us = process != nullptr && process->IsSwitch2() ? 100 : 0;
+        // Cached: hardware_concurrency() can cost a system call and Idle() is a hot path.
+        static const unsigned hardware_threads = std::thread::hardware_concurrency();
+        const bool switch2 = process != nullptr && process->IsSwitch2();
+        spin_us = switch2 &&
+                          ShouldSpinWhenIdle(Settings::values.core_idle_spin.GetValue(),
+                                             hardware_threads)
+                      ? 100
+                      : 0;
 #endif
     }
     const auto spin = std::chrono::microseconds{spin_us};

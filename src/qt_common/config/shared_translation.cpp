@@ -103,6 +103,12 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "Auto does this only on CPUs with at least 8 performance threads (and 4 efficiency "
               "threads for the background decoder), and leaves smaller CPUs to the OS scheduler. "
               "The EDEN_HYBRID_CORES=0 environment variable still disables it."));
+    INSERT(Settings, core_idle_spin, tr("Idle core spin:"),
+           tr("Lets an emulated CPU core with no work keep polling for a short time before "
+              "sleeping, which wakes it faster at the cost of CPU usage.\n"
+              "Auto enables it only when emulating Switch 2 on a host with at least 8 hardware "
+              "threads. Off always sleeps immediately; On spins whenever emulating Switch 2."));
+
     INSERT(Settings, use_custom_cpu_ticks, QString(), QString());
     INSERT(Settings, cpu_ticks, tr("Custom CPU Ticks"),
            tr("Set a custom value of CPU ticks. Higher values can increase performance, but may "
@@ -673,6 +679,12 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
                               PAIR(HybridCorePlacement, Auto, tr("Auto")),
                               PAIR(HybridCorePlacement, Off, tr("Off")),
                               PAIR(HybridCorePlacement, On, tr("On")),
+                          }});
+    translations->insert({Settings::EnumMetadata<Settings::CoreIdleSpin>::Index(),
+                          {
+                              PAIR(CoreIdleSpin, Auto, tr("Auto")),
+                              PAIR(CoreIdleSpin, Off, tr("Off")),
+                              PAIR(CoreIdleSpin, On, tr("On")),
                           }});
     translations->insert({Settings::EnumMetadata<Settings::CpuClock>::Index(),
                           {
