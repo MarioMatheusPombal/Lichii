@@ -96,6 +96,13 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
            tr("Raises the clock the emulated CPU reports, which removes some FPS limiters.\n"
               "Weaker CPUs may see reduced performance, and certain games may behave improperly."));
 
+    INSERT(Settings, hybrid_core_placement, tr("Hybrid CPU core placement:"),
+           tr("Windows only. On CPUs with performance and efficiency cores, keeps the emulator's "
+              "time-critical threads on the performance cores and background decoding on the "
+              "efficiency cores.\n"
+              "Auto does this only on CPUs with at least 8 performance threads (and 4 efficiency "
+              "threads for the background decoder), and leaves smaller CPUs to the OS scheduler. "
+              "The EDEN_HYBRID_CORES=0 environment variable still disables it."));
     INSERT(Settings, use_custom_cpu_ticks, QString(), QString());
     INSERT(Settings, cpu_ticks, tr("Custom CPU Ticks"),
            tr("Set a custom value of CPU ticks. Higher values can increase performance, but may "
@@ -660,6 +667,12 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
                           {
                               PAIR(ConsoleMode, Docked, tr("Docked")),
                               PAIR(ConsoleMode, Handheld, tr("Handheld")),
+                          }});
+    translations->insert({Settings::EnumMetadata<Settings::HybridCorePlacement>::Index(),
+                          {
+                              PAIR(HybridCorePlacement, Auto, tr("Auto")),
+                              PAIR(HybridCorePlacement, Off, tr("Off")),
+                              PAIR(HybridCorePlacement, On, tr("On")),
                           }});
     translations->insert({Settings::EnumMetadata<Settings::CpuClock>::Index(),
                           {

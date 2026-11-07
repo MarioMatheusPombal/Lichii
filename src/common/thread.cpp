@@ -16,7 +16,9 @@
 #include "common/adpf.h"
 #include "common/error.h"
 #include "common/event_wait.h"
+#include "common/hybrid_core_placement.h"
 #include "common/logging.h"
+#include "common/settings.h"
 #include "common/assert.h"
 #include "common/thread.h"
 #ifdef __APPLE__
@@ -456,7 +458,8 @@ namespace {
 // Hybrid CPUs (Intel P/E cores): Windows alone may run the emulator's time-critical threads on an
 // efficiency core, where a frame takes much longer. Keep them on the fastest cores with CPU sets
 // (a soft affinity the power manager respects) and background workers on the slower ones.
-// EDEN_HYBRID_CORES=0 turns this off.
+// EDEN_HYBRID_CORES=0 turns this off; the hybrid_core_placement setting (Auto/Off/On) decides per
+// call whether a CPU is big enough to benefit.
 struct WindowsCpuSets {
     std::vector<ULONG> performance;
     std::vector<ULONG> efficiency;
@@ -638,7 +641,12 @@ void SetCurrentThreadToPerformanceCores() {
     }
     SetCurrentThreadCoreGroup(CoreGroup::Performance);
 #elif defined(_WIN32)
-    if (const WindowsCpuSets& sets = CpuSets(); sets.hybrid) {
+    // The placement setting is read here, not cached with the CPU sets, because CpuSets() can
+    // run before the configuration is loaded.
+    if (const WindowsCpuSets& sets = CpuSets();
+        sets.hybrid &&
+        ShouldPinToPerformanceCores(Settings::values.hybrid_core_placement.GetValue(),
+                                    sets.performance.size())) {
         SelectCurrentThreadCpuSets(sets.performance);
     }
 #endif
@@ -652,7 +660,10 @@ void SetCurrentThreadToEfficiencyCores() {
     }
     SetCurrentThreadCoreGroup(CoreGroup::Efficiency);
 #elif defined(_WIN32)
-    if (const WindowsCpuSets& sets = CpuSets(); sets.hybrid) {
+    if (const WindowsCpuSets& sets = CpuSets();
+        sets.hybrid &&
+        ShouldPinToEfficiencyCores(Settings::values.hybrid_core_placement.GetValue(),
+                                   sets.efficiency.size())) {
         SelectCurrentThreadCpuSets(sets.efficiency);
     }
 #endif

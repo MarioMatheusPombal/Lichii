@@ -101,6 +101,7 @@ add_executable(tests
     common/cityhash.cpp
     common/container_hash.cpp
     common/event.cpp
+    common/hybrid_core_placement.cpp
     common/fibers.cpp
     common/game_presets.cpp
     common/host_memory.cpp
