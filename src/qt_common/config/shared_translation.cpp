@@ -296,6 +296,17 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
               "them on smaller CPUs.\n"
               "Fewer threads leave more CPU for emulation while shaders build; more threads "
               "shorten stutter-free loading on strong CPUs. Takes effect on the next game start."));
+    INSERT(Settings, native_async_draws, tr("Switch 2 draws with unbuilt pipelines:"),
+           tr("Only applies when asynchronous shader building is on. Decides what a Switch 2 draw "
+              "does when its graphics pipeline is still building.\n"
+              "Wait stalls the GPU until the pipeline is ready (no missing effects, but long "
+              "stalls on new content). Skip drops the draw, which can leave an effect missing for "
+              "a few frames. Bounded waits up to the time below per frame, then skips. The "
+              "EDEN_NX2_ASYNC_DISCARD=1 environment variable still forces Skip."));
+    INSERT(Settings, native_pipeline_wait_ms, tr("Pipeline wait per frame (ms):"),
+           tr("Used by the Bounded mode: the most time per frame that Switch 2 draws may wait in "
+              "total for pipelines that are still building. Once spent, the remaining unbuilt "
+              "draws of that frame are skipped."));
     INSERT(Settings, amd_allow_fp16, tr("Allow float16 shader math on AMD (experimental)"),
            tr("The emulator turns off 16-bit float shader math on AMD GPUs because it was broken "
               "on some drivers and games (Donkey Kong Country Returns). Enabling this can improve "
@@ -702,6 +713,12 @@ std::unique_ptr<ComboboxTranslationMap> ComboboxEnumeration(QObject* parent) {
                               PAIR(CoreIdleSpin, Auto, tr("Auto")),
                               PAIR(CoreIdleSpin, Off, tr("Off")),
                               PAIR(CoreIdleSpin, On, tr("On")),
+                          }});
+    translations->insert({Settings::EnumMetadata<Settings::NativeAsyncDraws>::Index(),
+                          {
+                              PAIR(NativeAsyncDraws, Wait, tr("Wait")),
+                              PAIR(NativeAsyncDraws, Bounded, tr("Bounded wait")),
+                              PAIR(NativeAsyncDraws, Skip, tr("Skip")),
                           }});
     translations->insert({Settings::EnumMetadata<Settings::CpuClock>::Index(),
                           {
